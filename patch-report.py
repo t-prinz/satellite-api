@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+#
+# Satellite API documentation is available at
+# https://satsvr.xxx.xxx/apidoc/v2.html
+#
+
 import json
 import sys
 import time
