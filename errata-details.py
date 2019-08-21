@@ -176,6 +176,8 @@ def main():
 
     orgs = get_json(username, password, ssl_ver, KATELLO_API + "organizations/")
 
+    # Loop over all Organizations:Start
+
     for i_org in orgs['results']:
 
       # Get a list of hosts in the organization
@@ -183,8 +185,22 @@ def main():
       # API:  /api/organizations/:organization_id/hosts
 
       orghosts = get_json(username, password, ssl_ver, SAT_API + "organizations/" + str(i_org['id']) + "/hosts")
+#      print(json.dumps(orghosts, indent=4))
+
+      # Loop over all Hosts in an Organization:Start
 
       for i_orghost in orghosts['results']:
+#        print(json.dumps(i_orghost, indent=4))
+        print( i_orghost['name'] )
+        print( i_orghost['id'] )
+#        print( i_orghost['subscription_facet_attributes']['registered_through'] )
+
+        if not ( i_orghost['subscription_facet_attributes']['registered_through'] ):
+          print("System is not registered")
+          continue
+        else:
+          print("System is registered")
+
         security_errata = i_orghost['content_facet_attributes']['errata_counts']['security']
         bugfix_errata = i_orghost['content_facet_attributes']['errata_counts']['bugfix']
         enhancement_errata = i_orghost['content_facet_attributes']['errata_counts']['enhancement']
@@ -193,6 +209,15 @@ def main():
           all_patches_applied = "No"
         else:
           all_patches_applied = "Yes"
+
+        errata = get_json(username, password, ssl_ver, KATELLO_API + "errata/?host_id=" + str(i_orghost['id']) + "&full_result=true")
+        print(json.dumps(errata['results'], indent=4))
+
+        # Loop over all Errata:Start
+
+        for i_errata in errata['results']:
+
+        # Loop over all Errata:End
 
         fileo.write("  <tr>\n")
         fileo.write("    <td>{}</td>\n".format(i_org['name']) )
@@ -206,16 +231,9 @@ def main():
         fileo.write("    <td>{}</td>\n".format(str(enhancement_errata)) )
         fileo.write("  </tr>\n")
 
-#        print "Organization       :  " + i_org['name']
-#        print "Hostname           :  " + i_orghost['name']
-#        print "OS                 :  " + i_orghost['operatingsystem_name']
-#        print "Environment        :  " + i_orghost['content_facet_attributes']['lifecycle_environment_name']
-#        print "Content View       :  " + i_orghost['content_facet_attributes']['content_view_name']
-#        print "All Errata Applied?:  " + all_patches_applied
-#        print "Security Errata    :  " + str(security_errata)
-#        print "Bug Fix Errata     :  " + str(bugfix_errata)
-#        print "Enhancement        :  " + str(enhancement_errata)
-#        print ""
+      # Loop over all Hosts in an Organization:End
+
+    # Loop over all Organizations:End
 
     # Write out the final part of the HTML file
 
