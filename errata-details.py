@@ -86,10 +86,10 @@ def pre_write(filed):
   filed.write("    <th>OS</th>\n")
   filed.write("    <th>Environment</th>\n")
   filed.write("    <th>Content View</th>\n")
-  filed.write("    <th>All Errata Applied?</th>\n")
-  filed.write("    <th>Security Errata</th>\n")
-  filed.write("    <th>Bug Fix Errata</th>\n")
-  filed.write("    <th>Enhancement</th>\n")
+  filed.write("    <th>Errata ID</th>\n")
+  filed.write("    <th>Applicable</th>\n")
+  filed.write("    <th>Installable</th>\n")
+  filed.write("    <th>Installed</th>\n")
   filed.write("  </tr>\n")
 
 ########################################
@@ -110,7 +110,10 @@ def main():
       - For each organization
         - Find each host in the organization
         - For each host
-          - Print errata information
+          - Obtain list of applicable and installable errata from Satellite
+            - Write list of applicable and installable errata
+          - Read list of installed errata from a supplied file
+            - Write list of installed errata
     """
 
     # Parse command line arguments
@@ -121,6 +124,7 @@ def main():
     parser.add_argument("-p", "--password", dest="PASSWORD", type=str, help="Password")
     parser.add_argument("--ssl", dest="SSL_VERIFY", default="False", type=str, help="Observe SSL errors - True or (default) False")
     parser.add_argument("-l", "--logdir", dest="LOGDIR", type=str, help="Log directory")
+    parser.add_argument("-e", "--erratarepdir", dest="ERRATA_REPORTS_DIR", type=str, help="Directory containing host errata reports")
     args = parser.parse_args()
 
     # Prompt for username if needed
@@ -152,6 +156,13 @@ def main():
       fileo = open(filename, 'w')
     else:
       fileo = sys.stdout
+
+    # Define the directory containing all of the errata reports for each host
+
+    if args.ERRATA_REPORTS_DIR:
+      errata_reports_dir = args.ERRATA_REPORTS_DIR
+    else:
+      errata_reports_dir = "errata_reports"
 
     # Compose the URL to the Satellite 6 server
 
@@ -191,45 +202,139 @@ def main():
 
       for i_orghost in orghosts['results']:
 #        print(json.dumps(i_orghost, indent=4))
-        print( i_orghost['name'] )
-        print( i_orghost['id'] )
-#        print( i_orghost['subscription_facet_attributes']['registered_through'] )
+#        print("hostname = " + i_orghost['name'])
+#        print("id = " + str(i_orghost['id']) )
+
+        # Skip the host if it is not registered in Satellite
 
         if not ( i_orghost['subscription_facet_attributes']['registered_through'] ):
-          print("System is not registered")
+#          print("System is not registered")
           continue
-        else:
-          print("System is registered")
-
-        security_errata = i_orghost['content_facet_attributes']['errata_counts']['security']
-        bugfix_errata = i_orghost['content_facet_attributes']['errata_counts']['bugfix']
-        enhancement_errata = i_orghost['content_facet_attributes']['errata_counts']['enhancement']
-
-        if (security_errata + bugfix_errata + enhancement_errata) > 0:
-          all_patches_applied = "No"
-        else:
-          all_patches_applied = "Yes"
 
         errata = get_json(username, password, ssl_ver, KATELLO_API + "errata/?host_id=" + str(i_orghost['id']) + "&full_result=true")
-        print(json.dumps(errata['results'], indent=4))
+        if len(errata['results']) > 0:
+#          print("Have applicable or installable errata for host " + i_orghost['name'])
 
-        # Loop over all Errata:Start
+#          print(json.dumps(errata['results'], indent=4))
 
-        for i_errata in errata['results']:
+          # Loop over all Errata:Start
 
-        # Loop over all Errata:End
+          for i_errata in errata['results']:
+#            print(i_errata['type'])
 
-        fileo.write("  <tr>\n")
-        fileo.write("    <td>{}</td>\n".format(i_org['name']) )
-        fileo.write("    <td>{}</td>\n".format(i_orghost['name']) )
-        fileo.write("    <td>{}</td>\n".format(i_orghost['operatingsystem_name']) )
-        fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['lifecycle_environment_name']) )
-        fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['content_view_name']) )
-        fileo.write("    <td>{}</td>\n".format(all_patches_applied) )
-        fileo.write("    <td>{}</td>\n".format(str(security_errata)) )
-        fileo.write("    <td>{}</td>\n".format(str(bugfix_errata)) )
-        fileo.write("    <td>{}</td>\n".format(str(enhancement_errata)) )
-        fileo.write("  </tr>\n")
+            if (i_errata['hosts_applicable_count'] == 1):
+              errata_applicable = "Yes"
+            else:
+              errata_applicable = "No"
+
+            if (i_errata['hosts_available_count'] == 1):
+              errata_installable = "Yes"
+            else:
+              errata_installable = "No"
+
+            errata_installed = "No"
+
+            fileo.write("  <tr>\n")
+            fileo.write("    <td>{}</td>\n".format(i_org['name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['operatingsystem_name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['lifecycle_environment_name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['content_view_name']) )
+            fileo.write("    <td>{}</td>\n".format(i_errata['errata_id']) )
+            fileo.write("    <td>{}</td>\n".format(errata_applicable) )
+            fileo.write("    <td>{}</td>\n".format(errata_installable) )
+            fileo.write("    <td>{}</td>\n".format(errata_installed) )
+            fileo.write("  </tr>\n")
+
+          # Loop over all Errata:End
+
+        else:
+#          print("No applicable or installable errata for host " + i_orghost['name'])
+
+          errata_applicable = "NONE AVAILABLE"
+          errata_installable = "NONE AVAILABLE"
+          errata_installed = "-"
+
+          fileo.write("  <tr>\n")
+          fileo.write("    <td>{}</td>\n".format(i_org['name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['operatingsystem_name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['lifecycle_environment_name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['content_view_name']) )
+          fileo.write("    <td>{}</td>\n".format("-") )
+          fileo.write("    <td>{}</td>\n".format(errata_applicable) )
+          fileo.write("    <td>{}</td>\n".format(errata_installable) )
+          fileo.write("    <td>{}</td>\n".format(errata_installed) )
+          fileo.write("  </tr>\n")
+
+        # Read list of installed errata
+        #
+        # This file will have been generated by running the Ansible playbook
+        # that collects the list of installed errata.  Each line is of the form
+        #
+        # errata_name errata_type package
+        #
+        # Since an errata can update multiple packages, a dictionary is created
+        # to generate a unique list of errata
+        #
+        # Note also that the errata file has some information at the beginning
+        # and end that aren't actual errata.  For that reason, only lines
+        # beginning with "RH" are considered.
+
+        fname_installed_errata = errata_reports_dir + "/" + i_orghost['name']
+        fd_installed_errata = None
+        installed_errata = {}
+
+        try:
+          fd_installed_errata = open(fname_installed_errata, 'r')
+        except IOError:
+#          print("Cannot open file: " + fname_installed_errata)
+          pass
+        else:
+          for i_installed in fd_installed_errata:
+            if i_installed[:2] == "RH":
+              errata_components = i_installed.split()
+              installed_errata.update({ errata_components[0] : errata_components[1] })
+          fd_installed_errata.close()
+
+        # Write out the list of installed errata
+
+        if installed_errata:
+#          print("Writing out the list of installed errata for host " + i_orghost['name'])
+
+          errata_applicable = "-"
+          errata_installable = "-"
+          errata_installed = "Yes"
+          for (errata_name, errata_type) in installed_errata.items():
+#            print(errata_name + " : " + errata_type)
+            fileo.write("  <tr>\n")
+            fileo.write("    <td>{}</td>\n".format(i_org['name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['operatingsystem_name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['lifecycle_environment_name']) )
+            fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['content_view_name']) )
+            fileo.write("    <td>{}</td>\n".format(errata_name) )
+            fileo.write("    <td>{}</td>\n".format(errata_applicable) )
+            fileo.write("    <td>{}</td>\n".format(errata_installable) )
+            fileo.write("    <td>{}</td>\n".format(errata_installed) )
+            fileo.write("  </tr>\n")
+        else:
+#          print("No installed errata or installed errata not available for host " + i_orghost['name'])
+
+          errata_applicable = "-"
+          errata_installable = "-"
+          errata_installed = "NOT AVAILABLE"
+          fileo.write("  <tr>\n")
+          fileo.write("    <td>{}</td>\n".format(i_org['name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['operatingsystem_name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['lifecycle_environment_name']) )
+          fileo.write("    <td>{}</td>\n".format(i_orghost['content_facet_attributes']['content_view_name']) )
+          fileo.write("    <td>{}</td>\n".format(i_errata['errata_id']) )
+          fileo.write("    <td>{}</td>\n".format(errata_applicable) )
+          fileo.write("    <td>{}</td>\n".format(errata_installable) )
+          fileo.write("    <td>{}</td>\n".format(errata_installed) )
+          fileo.write("  </tr>\n")
 
       # Loop over all Hosts in an Organization:End
 

@@ -1,0 +1,4 @@
+localhost ansible_connection=local
+
+[satellite_systems]
+phys100.aeronet.io

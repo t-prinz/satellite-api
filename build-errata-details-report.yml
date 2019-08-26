@@ -1,0 +1,47 @@
+---
+- name: Build report containing list of applicable, installable, and installed errata
+  hosts: localhost
+#  remote_user: root
+#  become: true
+  vars:
+    credfile: 
+    builder: ./errata-details.py
+    sat_server: sat.example.com
+    sat_user: SETME
+    sat_password: SETME
+    report_dir: output
+    errata_reports_dir: ./errata_reports
+
+  tasks:
+
+    - name: Check for credentials file
+      stat:
+        path: "{{ credfile }}"
+      register: stat_results
+
+    - name: Define credentials using local file
+      block:
+
+      - name: Include variable definitions from local file
+        include_vars:
+          file: "{{ credfile }}"
+
+      - name: Define Satellite credentials based on local file
+        set_fact:
+          sat_user: "{{ cf_sat_user }}"
+          sat_password: "{{ cf_sat_password }}"
+
+      when: stat_results.stat.exists
+
+    - name: Define credentials using Ansible Tower custom credentials
+      block:
+
+      - name: Define Satellite credentials based on custom credential
+        set_fact:
+          sat_user: "{{ at_sat_user }}"
+          sat_password: "{{ at_sat_password }}"
+
+      when: not stat_results.stat.exists
+
+    - name: Run the report builder
+      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ report_dir }} -e {{ errata_reports_dir }} 2> /dev/null"

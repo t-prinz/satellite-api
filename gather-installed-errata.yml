@@ -1,0 +1,53 @@
+---
+- name: Gather installed errata from all hosts
+  hosts: satellite_systems
+  remote_user: root
+#  become: true
+  vars:
+    remote_report_dir: /var/tmp
+    errata_reports_dir: ./errata_reports
+
+  tasks:
+  - name: Obtain date
+    command: "date +%F"
+    register: report_date
+    delegate_to: localhost
+
+  - name: Ensure errata reports directory is present (this is a local directory)
+    file:
+      path: "{{ errata_reports_dir }}"
+      state: directory
+    become: false
+    delegate_to: localhost
+
+  - name: Define report filename
+    set_fact:
+#      report_filename: "{{ remote_report_dir }}/{{ ansible_host }}-{{ report_date.stdout }}"
+      report_filename: "{{ remote_report_dir }}/{{ ansible_host }}"
+      
+  - name: Get list of installed errata
+#    shell: yum updateinfo list installed | awk 'NR>2 {errata[icnt++]=$0} END { for(ierrata=0; ierrata<icnt-1; ierrata++) {print errata[ierrata]}}'
+    shell: yum updateinfo list installed
+    register: installed_errata
+    args:
+      warn: no
+
+#  - name: Debug
+#    debug:
+#      var: installed_errata.stdout
+
+  - name: Write output to file
+    copy:
+      content: "{{ installed_errata.stdout }}"
+      dest: "{{ report_filename }}"
+
+  - name: Copy report to local directory
+    fetch:
+      dest: "{{ errata_reports_dir }}/"
+      flat: Yes
+      src: "{{ report_filename }}"
+
+  - name: Remove report from remote system
+    file:
+      path: "{{ report_filename }}"
+      state: absent
