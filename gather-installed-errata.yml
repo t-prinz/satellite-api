@@ -3,16 +3,13 @@
 #  hosts: foreman_content_view_rhel_7server
   hosts: "{{ target_host | default('NO_HOSTS')}}"
   remote_user: root
-#  become: true
   vars:
     remote_report_dir: /var/tmp
     errata_reports_dir: ./errata_reports
+    report_server: bastion.example.com
+    report_server_installed_errata_path: /var/tmp/installed_errata_files/
 
   tasks:
-  - name: Obtain date
-    command: "date +%F"
-    register: report_date
-    delegate_to: localhost
 
   - name: Ensure errata reports directory is present (this is a local directory)
     file:
@@ -23,7 +20,6 @@
 
   - name: Define report filename
     set_fact:
-#      report_filename: "{{ remote_report_dir }}/{{ ansible_host }}-{{ report_date.stdout }}"
       report_filename: "{{ remote_report_dir }}/{{ ansible_host }}"
       
   - name: Get list of installed errata
@@ -52,3 +48,7 @@
     file:
       path: "{{ report_filename }}"
       state: absent
+
+  - name: Copy the installed errata reports over to the report server for further use
+    command: "rsync -a {{ errata_reports_dir }}/ {{ report_server }}:{{ report_server_installed_errata_path }}"
+    delegate_to: localhost

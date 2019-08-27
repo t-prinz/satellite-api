@@ -1,16 +1,17 @@
 ---
 - name: Build report containing list of applicable, installable, and installed errata
   hosts: localhost
-#  remote_user: root
-#  become: true
   vars:
     credfile: ../private/creds.yml
     builder: ./errata-details.py
     sat_server: sat.example.com
     sat_user: SETME
     sat_password: SETME
-    report_dir: output
-    errata_reports_dir: ./errata_reports
+    report_dir: ./tmp_final_report/
+    errata_reports_dir: ./tmp_errata_reports/
+    report_server: bastion.example.com
+    report_server_installed_errata_path: /var/tmp/installed_errata_files/
+    report_server_final_report_path: /var/tmp/final_reports/
 
   tasks:
 
@@ -43,5 +44,17 @@
 
       when: not stat_results.stat.exists
 
+    - name: Copy all of the installed errata reports from the report server
+      command: "rsync -a {{ report_server }}:{{ report_server_installed_errata_path }} {{ errata_reports_dir }}"
+
+    - name: Ensure final report directory is present (this is a local directory)
+      file:
+        path: "{{ report_dir }}"
+        state: directory
+      become: false
+
     - name: Run the report builder
       shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ report_dir }} -e {{ errata_reports_dir }} 2> /dev/null"
+
+    - name: Copy the final report directory to the report server
+      command: "rsync -a {{ report_dir }} {{ report_server }}:{{ report_server_final_report_path }}"
