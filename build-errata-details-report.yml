@@ -4,7 +4,7 @@
 #  remote_user: root
 #  become: true
   vars:
-    credfile: 
+    credfile: ../private/creds.yml
     builder: ./errata-details.py
     sat_server: sat.example.com
     sat_user: SETME
