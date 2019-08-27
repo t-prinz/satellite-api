@@ -1,4 +1,4 @@
 localhost ansible_connection=local
 
-[satellite_systems]
+[foreman_content_view_rhel_7server]
 phys100.aeronet.io

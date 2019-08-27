@@ -2330,8 +2330,8 @@ RHBA-2016:0213 bugfix         tuned-2.5.1-4.el7_2.2.noarch
 RHBA-2016:0545 bugfix         tuned-2.5.1-4.el7_2.3.noarch
 RHBA-2016:1848 bugfix         tuned-2.5.1-4.el7_2.6.noarch
 RHBA-2016:2479 bugfix         tuned-2.7.1-3.el7.noarch
-RHBA-2016:2886 bugfix         tuned-2.7.1-3.el7_3.1.noarch
 RHEA-2017:0102 enhancement    tuned-2.7.1-3.el7_3.1.noarch
+RHBA-2016:2886 bugfix         tuned-2.7.1-3.el7_3.1.noarch
 RHEA-2017:1307 enhancement    tuned-2.7.1-3.el7_3.2.noarch
 RHBA-2017:2102 bugfix         tuned-2.8.0-5.el7.noarch
 RHBA-2018:0139 bugfix         tuned-2.8.0-5.el7_4.2.noarch
