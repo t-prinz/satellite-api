@@ -60,5 +60,6 @@
     delegate_to: localhost
 
   - name: Copy the installed errata reports over to the report server for further use
+    remote_user: tprinz
     command: "rsync -a {{ errata_reports_dir }}/ {{ report_server }}:{{ report_server_installed_errata_path }}"
     delegate_to: localhost
