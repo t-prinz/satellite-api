@@ -1,18 +1,18 @@
 ---
-- name: Copy installed errata from report server
-  hosts: localhost
-  become: false
-  vars:
-    errata_reports_dir: ./tmp_errata_reports/
-    report_server: bastion.example.com
-    report_server_installed_errata_path: /var/tmp/installed_errata_files/
-
-  tasks:
-
-  - name: Copy the installed errata reports directory locally
-    synchronize:
-      src: "rsync://{{ report_server }}{{ report_server_installed_errata_path }}"
-      dest: "{{ errata_reports_dir }}/"
+#- name: Copy installed errata from report server
+#  hosts: localhost
+#  become: false
+#  vars:
+#    errata_reports_dir: ./tmp_errata_reports/
+#    report_server: bastion.example.com
+#    report_server_installed_errata_path: /var/tmp/installed_errata_files/
+#
+#  tasks:
+#
+#  - name: Copy the installed errata reports directory locally
+#    synchronize:
+#      src: "rsync://{{ report_server }}{{ report_server_installed_errata_path }}"
+#      dest: "{{ errata_reports_dir }}/"
 
 - name: Build report containing list of applicable, installable, and installed errata
   hosts: localhost
@@ -27,6 +27,8 @@
     report_server: bastion.example.com
     report_server_installed_errata_path: /var/tmp/installed_errata_files/
     report_server_final_report_path: /var/tmp/final_reports/
+    installed_errata_reports_dir: /mnt/errata_info/installed_errata_reports
+    final_errata_reports_dir: /mnt/errata_info/final_errata_reports
 
   tasks:
 
@@ -59,29 +61,31 @@
 
       when: not stat_results.stat.exists
 
-    - name: Copy all of the installed errata reports from the report server
-      command: "rsync -a {{ report_server }}:{{ report_server_installed_errata_path }} {{ errata_reports_dir }}"
+#    - name: Copy all of the installed errata reports from the report server
+#      command: "rsync -a {{ report_server }}:{{ report_server_installed_errata_path }} {{ errata_reports_dir }}"
 
     - name: Ensure final report directory is present (this is a local directory)
       file:
-        path: "{{ report_dir }}"
+        mode: 0777
+#        path: "{{ report_dir }}"
+        path: "{{ final_errata_reports_dir }}"
         state: directory
       become: false
 
     - name: Run the report builder
-      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ report_dir }} -e {{ errata_reports_dir }} 2> /dev/null"
+      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ final_errata_reports_dir }} -e {{ installed_errata_reports_dir }} 2> /dev/null"
 
-- name: Copy the final report
-  hosts: localhost
-  become: false
-  vars:
-    report_dir: ./tmp_final_report/
-    report_server: bastion.example.com
-    report_server_final_report_path: /var/tmp/final_reports/
-
-  tasks:
-
-  - name: Copy the installed errata reports directory locally
-    synchronize:
-      src: "{{ report_dir }}"
-      dest: "rsync://{{ report_server }}{{ report_server_final_report_path }}"
+#- name: Copy the final report
+#  hosts: localhost
+#  become: false
+#  vars:
+#    report_dir: ./tmp_final_report/
+#    report_server: bastion.example.com
+#    report_server_final_report_path: /var/tmp/final_reports/
+#
+#  tasks:
+#
+#  - name: Copy the installed errata reports directory locally
+#    synchronize:
+#      src: "{{ report_dir }}"
+#      dest: "rsync://{{ report_server }}{{ report_server_final_report_path }}"

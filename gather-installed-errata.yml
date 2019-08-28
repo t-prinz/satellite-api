@@ -6,15 +6,17 @@
   become: true
   vars:
     remote_report_dir: /var/tmp
-    errata_reports_dir: ./errata_reports
-    report_server: bastion.example.com
-    report_server_installed_errata_path: /var/tmp/installed_errata_files/
+    installed_errata_reports_dir: /mnt/errata_info/installed_errata_reports
+#    errata_reports_dir: ./errata_reports
+#    report_server: bastion.example.com
+#    report_server_installed_errata_path: /var/tmp/installed_errata_files/
 
   tasks:
 
   - name: Ensure errata reports directory is present (this is a local directory)
     file:
-      path: "{{ errata_reports_dir }}"
+      mode: 0777
+      path: "{{ installed_errata_reports_dir }}"
       state: directory
     become: false
     delegate_to: localhost
@@ -41,7 +43,7 @@
 
   - name: Copy report to local directory
     fetch:
-      dest: "{{ errata_reports_dir }}/"
+      dest: "{{ installed_errata_reports_dir }}/"
       flat: Yes
       src: "{{ report_filename }}"
 
@@ -50,17 +52,17 @@
       path: "{{ report_filename }}"
       state: absent
 
-- name: Copy installed errata to report server
-  hosts: localhost
-  become: false
-  vars:
-    errata_reports_dir: ./errata_reports
-    report_server: bastion.example.com
-    report_server_installed_errata_path: /var/tmp/installed_errata_files/
-
-  tasks:
-
-  - name: Copy the installed errata reports over to the report server for further use
-    synchronize:
-      src: "{{ errata_reports_dir }}/"
-      dest: "rsync://{{ report_server }}{{ report_server_installed_errata_path }}"
+#- name: Copy installed errata to report server
+#  hosts: localhost
+#  become: false
+#  vars:
+#    errata_reports_dir: ./errata_reports
+#    report_server: bastion.example.com
+#    report_server_installed_errata_path: /var/tmp/installed_errata_files/
+#
+#  tasks:
+#
+#  - name: Copy the installed errata reports over to the report server for further use
+#    synchronize:
+#      src: "{{ errata_reports_dir }}/"
+#      dest: "rsync://{{ report_server }}{{ report_server_installed_errata_path }}"
