@@ -205,16 +205,20 @@ def main():
 #        print("hostname = " + i_orghost['name'])
 #        print("id = " + str(i_orghost['id']) )
 
+        # Skip the host if it is not subscribed in Satellite
+
+        host_subs = get_json(username, password, ssl_ver, SAT_API + "hosts/" + str(i_orghost['id']) + "/subscriptions")
+        if not 'results' in host_subs:
+          continue
+
         # Skip the host if it is not registered in Satellite
 
         if not ( i_orghost['subscription_facet_attributes']['registered_through'] ):
-#          print("System is not registered")
           continue
 
         errata = get_json(username, password, ssl_ver, KATELLO_API + "errata/?host_id=" + str(i_orghost['id']) + "&full_result=true")
         if len(errata['results']) > 0:
 #          print("Have applicable or installable errata for host " + i_orghost['name'])
-
 #          print(json.dumps(errata['results'], indent=4))
 
           # Loop over all Errata:Start
