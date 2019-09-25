@@ -49,4 +49,5 @@
       become: false
 
     - name: Run the report builder
-      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ final_errata_reports_dir }} -e {{ installed_errata_reports_dir }} 2> /dev/null"
+#      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ final_errata_reports_dir }} -e {{ installed_errata_reports_dir }} 2> /dev/null"
+      shell: "{{ builder }} -s {{ sat_server }} -u {{ sat_user }} -p {{ sat_password }} -l {{ final_errata_reports_dir }} -e {{ installed_errata_reports_dir }}"
